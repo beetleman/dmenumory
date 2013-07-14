@@ -5,10 +5,12 @@ import subprocess
 import json
 from contextlib import contextmanager
 
-from dmenu import Dmenu
+from  dmenu import Dmenu
+from  dmenu import DMENU_OPTIONS
 
-CACHE_FILE = "/home/robal/.dmenumory"
-
+OPTIONS_DIR = os.path.expanduser("~/.dmenumory")
+CACHE_FILE = os.path.expanduser("~/.dmenumory/cache.json")
+OPTIONS_FILE = os.path.expanduser("~/.dmenumory/options.json")
 
 @contextmanager
 def auto_save_dict(filename):
@@ -27,9 +29,18 @@ def auto_save_dict(filename):
         fobj.truncate()
 
 
-def get_zero():
+def get_inf_value(val=0):
     while True:
-        yield 0
+        yield val
+
+class Options(dict):
+    def __init__(self, filename):
+        with auto_save_dict(filename) as options:
+            if not options:
+                options.update(self._get_default())
+            super(dict, self).__init__(options)
+    def _get_default(self):
+        return  dict(zip(DMENU_OPTIONS, get_inf_value('')))
 
 
 class Dmenumory(object):
@@ -48,7 +59,7 @@ class Dmenumory(object):
 
 
     def _get_new_cache(self):
-        return dict(zip(self._get_app_list(), get_zero()))
+        return dict(zip(self._get_app_list(), get_inf_value()))
 
     def _cache_to_app_list(self, cache):
         return sorted(cache, lambda x,y: cache[y] - cache[x])
@@ -78,5 +89,8 @@ class Dmenumory(object):
 
 
 if __name__ == '__main__':
-    dmenumory = Dmenumory(CACHE_FILE)
+    if not os.path.exists(OPTIONS_DIR):
+        os.mkdir(OPTIONS_DIR)
+    options = Options(OPTIONS_FILE)
+    dmenumory = Dmenumory(CACHE_FILE,options)
     dmenumory.run()
