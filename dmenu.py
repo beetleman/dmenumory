@@ -101,7 +101,6 @@ class Dmenu(object):
 
         input_str = "\n".join(items) + "\n"
 
-
         proc = Popen(cli, stdout=PIPE, stdin=PIPE)
         return proc.communicate(input_str)[0].strip()
 

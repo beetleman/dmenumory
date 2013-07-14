@@ -38,7 +38,8 @@ class Options(dict):
         with auto_save_dict(filename) as options:
             if not options:
                 options.update(self._get_default())
-            super(dict, self).__init__(options)
+            super(dict, self).__init__()
+            self.update(options)
     def _get_default(self):
         return  dict(zip(DMENU_OPTIONS, get_inf_value('')))
 
