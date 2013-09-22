@@ -3,7 +3,8 @@
 http://tools.suckless.org/dmenu/
 
 """
-from subprocess import Popen, PIPE
+
+import subprocess
 
 DMENU_OPTIONS = {"bottom" : "-b",
                  "ignorecase" : "-i",
@@ -102,8 +103,12 @@ class Dmenu(object):
 
         input_str = "\n".join(items) + "\n"
 
-        proc = Popen(cli, stdout=PIPE, stdin=PIPE)
-        return proc.communicate(input_str)[0].strip()
+        proc = subprocess.Popen(cli,
+                                stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE)
+
+        proc.stdin.write(input_str.encode())
+        return proc.communicate()[0].strip().decode()
 
 
     def run(self):
@@ -111,7 +116,7 @@ class Dmenu(object):
 
 if __name__ == '__main__':
     def f(a):
-        print "U picked '%s', my Master!" % a
+        print ("U picked '%s', my Master!" % a)
     dmenu = Dmenu(items=['Test', 'of', 'module'],
                   callback=f)
     dmenu.run()
