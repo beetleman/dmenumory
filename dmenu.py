@@ -44,7 +44,7 @@ class Dmenu(object):
             if option in DMENU_OPTIONS:
                 self.options[option] = options[option]
             else:
-                raise DMENU_OPTIONS
+                raise BadDmenuOption
 
 
     @staticmethod
@@ -103,6 +103,7 @@ class Dmenu(object):
 
         proc = Popen(cli, stdout=PIPE, stdin=PIPE)
         return proc.communicate(input_str)[0].strip()
+
 
     def run(self):
         self.callback(self._dmenu(self.items, **self.options))
