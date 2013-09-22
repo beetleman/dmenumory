@@ -63,9 +63,10 @@ class Dmenu(object):
         options = locals()
         args = ["dmenu"]
         for o in options:
-            if options[o]:
+            if options[o] and o!="ignorecase":
                 args.extend( (DMENU_OPTIONS[o], str(options[o])))
-
+            elif options[o] and o=="ignorecase":
+                args.append(DMENU_OPTIONS[o])
         return args
 
     def _dmenu(self, items,
