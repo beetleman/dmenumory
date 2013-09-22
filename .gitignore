@@ -2,7 +2,7 @@
 *~
 \#*
 dist/*
-#Dmenumory.egg-info/*
+Dmenumory.egg-info/*
 env/*
 build/*
 __pycache__/*
