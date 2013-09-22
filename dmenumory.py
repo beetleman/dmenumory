@@ -1,16 +1,21 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
 import os
 import subprocess
 import json
+import re
 from contextlib import contextmanager
+from xdg import BaseDirectory
+from xdg import DesktopEntry
 
 from  dmenu import Dmenu
 from  dmenu import DMENU_OPTIONS
 
+
 OPTIONS_DIR = os.path.expanduser("~/.dmenumory")
 CACHE_FILE = os.path.expanduser("~/.dmenumory/cache.json")
 OPTIONS_FILE = os.path.expanduser("~/.dmenumory/options.json")
+
 
 @contextmanager
 def auto_save_dict(filename):
@@ -18,7 +23,7 @@ def auto_save_dict(filename):
         mode = 'r+'
     else:
         mode = 'w'
-    with file(filename, mode) as fobj:
+    with open(filename, mode) as fobj:
         try:
             data = json.load(fobj)
         except IOError:
@@ -29,7 +34,7 @@ def auto_save_dict(filename):
         fobj.truncate()
 
 
-def get_inf_value(val=0):
+def getInfValue(val=0):
     while True:
         yield val
 
@@ -41,32 +46,34 @@ class Options(dict):
             super(dict, self).__init__()
             self.update(options)
     def _get_default(self):
-        return  dict(zip(DMENU_OPTIONS, get_inf_value('')))
+        options = dict(zip(DMENU_OPTIONS, getInfValue('')))
+        options["ignorecase"] = True
+        return  options
 
 
 class Dmenumory(object):
     def __init__(self,cache_file_name, options={}):
         self.options = options
-        self.cache_file_name = cache_file_name
+        self.CACHE_FILE_NAME = cache_file_name
 
-    def _get_app_list(self):
+    def _getDesktopEntries(self):
         all_exec = set()
-        for path in os.environ["PATH"].split(':'):
+        entries = []
+        for d in BaseDirectory.xdg_data_dirs:
+            path = os.path.join(d, "applications")
             if os.path.exists(path):
-                all_exec.update([app for app in os.listdir(path)
-                                 if os.access(os.path.join(path, app),
-                                              os.X_OK)])
-        return list(all_exec)
+                for dirpath, dirnames, filenames in os.walk(path):
+                     for filename in  filenames:
+                         if ".desktop" not in filename:
+                             continue
+                         entries.append(os.path.join(dirpath, filename))
+        return entries
 
-
-    def _get_new_cache(self):
-        return dict(zip(self._get_app_list(), get_inf_value()))
-
-    def _cache_to_app_list(self, cache):
-        return sorted(cache, lambda x,y: cache[y] - cache[x])
+    def _getNewCache(self):
+        return dict(zip(self._getDesktopEntries(), getInfValue()))
 
     def _update_cache(self, cache):
-        new_cache = self._get_new_cache()
+        new_cache = self._getNewCache()
         diff_old = set(cache).difference(set(new_cache))
         diff_new = set(new_cache).difference(set(cache))
         for app in diff_old:
@@ -75,16 +82,28 @@ class Dmenumory(object):
             cache[app] = 0
 
     def run(self):
-        with auto_save_dict(self.cache_file_name) as cache:
+        with auto_save_dict(self.CACHE_FILE_NAME) as cache:
             if not cache:
-                cache.update(self._get_new_cache())
-            def runit(app):
-                if app:
-                    cache[app] = 1+ cache.get(app, 0)
-                    subprocess.Popen(app)
-                    self._update_cache(cache)
+                cache.update(self._getNewCache())
+            apps = {}
+            for f in cache.keys():
+                app = DesktopEntry.DesktopEntry(f)
+                apps[app.getName()] = app
 
-            dmenu = Dmenu(sorted(cache, lambda x,y: cache[y] - cache[x]), runit)
+            def runit(selected):
+                if selected:
+                    app = re.sub(' \(.+\)$', '', selected)
+                    filename = apps[app].getFileName()
+                    cache[filename] = 1+ cache.get(filename, 0)
+                    cmd = apps[app].getExec().split()[0]
+                    subprocess.Popen(cmd, shell=True)
+                self._update_cache(cache)
+
+            names = sorted(apps.values(),
+                           key=lambda x: -cache[x.getFileName()]
+                           or ord(x.getName()[0]))
+            names = ["%s (%s)" % (a.getName(), a.getExec().split()[0]) for a in names]
+            dmenu = Dmenu(names, runit)
             dmenu.set_options(**self.options)
             dmenu.run()
 
