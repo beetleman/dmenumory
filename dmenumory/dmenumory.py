@@ -109,10 +109,12 @@ class Dmenumory(object):
             dmenu.set_options(**self.options)
             dmenu.run()
 
-
-if __name__ == '__main__':
+def main():
     if not os.path.exists(OPTIONS_DIR):
         os.mkdir(OPTIONS_DIR)
     options = Options(OPTIONS_FILE)
     dmenumory = Dmenumory(CACHE_FILE,options)
     dmenumory.run()
+
+if __name__ == '__main__':
+    main()
