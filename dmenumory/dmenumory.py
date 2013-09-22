@@ -8,8 +8,8 @@ from contextlib import contextmanager
 from xdg import BaseDirectory
 from xdg import DesktopEntry
 
-from  dmenu import Dmenu
-from  dmenu import DMENU_OPTIONS
+from  libs.dmenu import Dmenu
+from  libs.dmenu import DMENU_OPTIONS
 
 
 OPTIONS_DIR = os.path.expanduser("~/.dmenumory")
