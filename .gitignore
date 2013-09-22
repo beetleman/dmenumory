@@ -1,1 +1,8 @@
 *.pyc
+*~
+\#*
+dist/*
+#Dmenumory.egg-info/*
+env/*
+build/*
+__pycache__/*
