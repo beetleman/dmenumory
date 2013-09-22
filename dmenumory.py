@@ -95,7 +95,9 @@ class Dmenumory(object):
                     app = re.sub(' \(.+\)$', '', selected)
                     filename = apps[app].getFileName()
                     cache[filename] = 1+ cache.get(filename, 0)
-                    cmd = apps[app].getExec().split()[0]
+                    cmd = re.sub("( -{1,2}\w+\W?%\w)|( %\w)",
+                                 "",
+                                 apps[app].getExec()).strip()
                     subprocess.Popen(cmd, shell=True)
                 self._update_cache(cache)
 
