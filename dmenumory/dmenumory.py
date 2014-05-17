@@ -8,9 +8,10 @@ from contextlib import contextmanager
 from xdg import BaseDirectory
 from xdg import DesktopEntry
 
-from  libs.dmenu import Dmenu
-from  libs.dmenu import DMENU_OPTIONS
-
+from libs.dmenu import (
+    Dmenu,
+    DMENU_OPTIONS
+)
 
 OPTIONS_DIR = os.path.expanduser("~/.dmenumory")
 CACHE_FILE = os.path.expanduser("~/.dmenumory/cache.json")
@@ -30,13 +31,14 @@ def auto_save_dict(filename):
             data = {}
         yield data
         fobj.seek(0)
-        json.dump(data,fobj)
+        json.dump(data, fobj)
         fobj.truncate()
 
 
 def getInfValue(val=0):
     while True:
         yield val
+
 
 class Options(dict):
     def __init__(self, filename):
@@ -45,28 +47,29 @@ class Options(dict):
                 options.update(self._get_default())
             super(dict, self).__init__()
             self.update(options)
+
     def _get_default(self):
         options = dict(zip(DMENU_OPTIONS, getInfValue('')))
         options["ignorecase"] = True
-        return  options
+        return options
 
 
 class Dmenumory(object):
-    def __init__(self,cache_file_name, options={}):
+    def __init__(self, cache_file_name, options={}):
         self.options = options
         self.CACHE_FILE_NAME = cache_file_name
 
     def _getDesktopEntries(self):
-        all_exec = set()
+        # all_exec = set()
         entries = []
         for d in BaseDirectory.xdg_data_dirs:
             path = os.path.join(d, "applications")
             if os.path.exists(path):
                 for dirpath, dirnames, filenames in os.walk(path):
-                     for filename in  filenames:
-                         if ".desktop" not in filename:
-                             continue
-                         entries.append(os.path.join(dirpath, filename))
+                    for filename in filenames:
+                        if ".desktop" not in filename:
+                            continue
+                        entries.append(os.path.join(dirpath, filename))
         return entries
 
     def _getNewCache(self):
@@ -94,7 +97,7 @@ class Dmenumory(object):
                 if selected:
                     app = re.sub(' \(.+\)$', '', selected)
                     filename = apps[app].getFileName()
-                    cache[filename] = 1+ cache.get(filename, 0)
+                    cache[filename] = 1 + cache.get(filename, 0)
                     cmd = re.sub("( -{1,2}\w+\W?%\w)|( %\w)",
                                  "",
                                  apps[app].getExec()).strip()
@@ -104,16 +107,18 @@ class Dmenumory(object):
             names = sorted(apps.values(),
                            key=lambda x: -cache[x.getFileName()]
                            or ord(x.getName()[0]))
-            names = ["%s (%s)" % (a.getName(), a.getExec().split()[0]) for a in names]
+            names = ["%s (%s)" % (a.getName(), a.getExec().split()[0])
+                     for a in names]
             dmenu = Dmenu(names, runit)
             dmenu.set_options(**self.options)
             dmenu.run()
+
 
 def main():
     if not os.path.exists(OPTIONS_DIR):
         os.mkdir(OPTIONS_DIR)
     options = Options(OPTIONS_FILE)
-    dmenumory = Dmenumory(CACHE_FILE,options)
+    dmenumory = Dmenumory(CACHE_FILE, options)
     dmenumory.run()
 
 if __name__ == '__main__':
