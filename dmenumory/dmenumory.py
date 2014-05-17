@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import os
 import subprocess
 import json
@@ -7,6 +8,10 @@ import re
 from contextlib import contextmanager
 from xdg import BaseDirectory
 from xdg import DesktopEntry
+try:
+    from gi.repository import Gio
+except ImportError:
+    Gio = None
 
 from libs.dmenu import (
     Dmenu,
@@ -98,12 +103,16 @@ class Dmenumory(object):
                     app = re.sub(' \(.+\)$', '', selected)
                     filename = apps[app].getFileName()
                     cache[filename] = 1 + cache.get(filename, 0)
-                    cmd = re.sub("( -{1,2}\w+\W?%\w)|( %\w)",
-                                 "",
-                                 apps[app].getExec()).strip()
-                    subprocess.Popen(cmd, shell=True)
+                    if Gio:
+                        launcher = Gio.DesktopAppInfo.new_from_filename(
+                            filename)
+                        launcher.launch([], None)
+                    else:
+                        cmd = re.sub("( -{1,2}\w+\W?%\w)|( %\w)",
+                                     "",
+                                     apps[app].getExec()).strip()
+                        subprocess.Popen(cmd, shell=True)
                 self._update_cache(cache)
-
             names = sorted(apps.values(),
                            key=lambda x: -cache[x.getFileName()]
                            or ord(x.getName()[0]))
